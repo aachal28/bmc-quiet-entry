@@ -35,14 +35,15 @@ function Index() {
           <img
             src={logo.url}
             alt="Bandra Movement Club"
-            className="w-64 max-w-[78vw] mix-blend-multiply sm:w-80"
+            className="w-72 max-w-[86vw] mix-blend-multiply sm:w-96"
             style={{
               maskImage:
-                "radial-gradient(closest-side, oklch(0 0 0) 52%, transparent 88%)",
+                "radial-gradient(closest-side, oklch(0 0 0) 74%, transparent 99%)",
               WebkitMaskImage:
-                "radial-gradient(closest-side, oklch(0 0 0) 52%, transparent 88%)",
+                "radial-gradient(closest-side, oklch(0 0 0) 74%, transparent 99%)",
             }}
           />
+
 
           <button
             type="button"
