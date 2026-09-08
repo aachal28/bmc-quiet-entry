@@ -1,24 +1,74 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import logo from "@/assets/bmc-logo.png.asset.json";
+import { InterestForm } from "@/components/InterestForm";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Bandra Movement Club" },
+      {
+        name: "description",
+        content:
+          "A private, members-only movement studio in Bandra, Mumbai. Show interest.",
+      },
+      { property: "og:title", content: "Bandra Movement Club" },
+      {
+        property: "og:description",
+        content:
+          "A private, members-only movement studio in Bandra, Mumbai. Show interest.",
+      },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+type Stage = "landing" | "form" | "done";
+
 function Index() {
+  const [stage, setStage] = useState<Stage>("landing");
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="concrete min-h-dvh bg-background">
+      {stage === "landing" ? (
+        <section className="quiet-in flex min-h-dvh flex-col items-center justify-center px-8">
+          <img
+            src={logo.url}
+            alt="Bandra Movement Club"
+            className="w-72 max-w-[86vw] mix-blend-multiply sm:w-96"
+            style={{
+              maskImage:
+                "radial-gradient(closest-side, oklch(0 0 0) 74%, transparent 99%)",
+              WebkitMaskImage:
+                "radial-gradient(closest-side, oklch(0 0 0) 74%, transparent 99%)",
+            }}
+          />
+
+
+          <button
+            type="button"
+            onClick={() => setStage("form")}
+            className="mt-10 px-2 py-3 text-[0.75rem] tracking-[0.3em] text-foreground underline-offset-8 hover:underline"
+          >
+            SHOW INTEREST
+          </button>
+        </section>
+      ) : null}
+
+      {stage === "form" ? (
+        <div className="quiet-in">
+          <InterestForm onSubmitted={() => setStage("done")} />
+        </div>
+      ) : null}
+
+      {stage === "done" ? (
+        <section className="quiet-in flex min-h-dvh items-center justify-center px-8">
+          <p className="max-w-md text-center font-serif text-xl leading-relaxed font-light text-foreground">
+            Thank you for your interest, if we have a spot for you, someone from our team
+            will reach out!
+          </p>
+        </section>
+      ) : null}
+    </main>
   );
 }
