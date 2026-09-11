@@ -24,7 +24,7 @@ export const notifyInterestSubmission = createServerFn({ method: "POST" })
     const apiKey = process.env["RESEND_API_KEY"];
 
     // CHANGE THIS TO YOUR EMAIL
-    const to = "YOUR_EMAIL@gmail.com";
+    const to = "achalpardeshi159@gmail.com";
 
     if (!apiKey) {
       console.error("[interest] RESEND_API_KEY is missing");
