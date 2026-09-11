@@ -18,19 +18,21 @@ type Submission = {
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/**
- * Sends the admin notification for a new interest submission.
- * The database row is the primary record; this is a best-effort notification.
- */
 export const notifyInterestSubmission = createServerFn({ method: "POST" })
   .inputValidator((data: Submission) => data)
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    const to = process.env["NOTIFY_TO_EMAIL"];
-    const from = process.env["NOTIFY_FROM_EMAIL"];
+    const apiKey = process.env["RESEND_API_KEY"];
 
-    if (!apiKey || !to || !from) {
-      return { sent: false, reason: "email_not_configured" as const };
+    // CHANGE THIS TO YOUR EMAIL
+    const to = "YOUR_EMAIL@gmail.com";
+
+    if (!apiKey) {
+      console.error("[interest] RESEND_API_KEY is missing");
+
+      return {
+        sent: false,
+        reason: "email_not_configured" as const,
+      };
     }
 
     const rows: Array<[string, string]> = [
@@ -38,13 +40,25 @@ export const notifyInterestSubmission = createServerFn({ method: "POST" })
       ["Phone", data.phone],
       ["Where did you hear about us?", data.heard_about],
       ["How familiar are you with what we do?", data.familiarity],
-      ["Six months in, what would feel like a real win?", data.six_month_win.join(" · ")],
-      ["How patient would you say you are with the process?", data.patience],
-      ["What does training look like for you right now?", data.current_training.join(" · ")],
+      [
+        "Six months in, what would feel like a real win?",
+        data.six_month_win.join(" · "),
+      ],
+      [
+        "How patient would you say you are with the process?",
+        data.patience,
+      ],
+      [
+        "What does training look like for you right now?",
+        data.current_training.join(" · "),
+      ],
       ["Which schedule would work best for you?", data.preferred_schedule],
       ["When do you usually prefer to train?", data.preferred_training_time],
       ["Does the membership structure work for you?", data.membership_fit],
-      ["Anything we should know before we reach out?", data.anything_else || "Not provided"],
+      [
+        "Anything we should know before we reach out?",
+        data.anything_else || "Not provided",
+      ],
       ["Submitted", data.submitted_at],
     ];
 
@@ -54,32 +68,65 @@ export const notifyInterestSubmission = createServerFn({ method: "POST" })
       ...rows.map(([label, value]) => `${label}\n${value}\n`),
     ].join("\n");
 
-    const html = `<div style="font-family:Helvetica,Arial,sans-serif;color:#1a1a1a">
-<h2 style="font-weight:400;letter-spacing:.04em">Bandra Movement Club — New Interest Form Submission</h2>
-${rows
-  .map(
-    ([label, value]) =>
-      `<p style="margin:0 0 16px"><strong style="display:block;font-weight:600">${esc(label)}</strong>${esc(value)}</p>`,
-  )
-  .join("")}
-</div>`;
+    const html = `
+      <div style="font-family:Helvetica,Arial,sans-serif;color:#1a1a1a">
+        <h2 style="font-weight:400;letter-spacing:.04em">
+          Bandra Movement Club — New Interest Form Submission
+        </h2>
+
+        ${rows
+          .map(
+            ([label, value]) =>
+              `<p style="margin:0 0 16px">
+                <strong style="display:block;font-weight:600">
+                  ${esc(label)}
+                </strong>
+                ${esc(value)}
+              </p>`,
+          )
+          .join("")}
+      </div>
+    `;
 
     try {
-      const { sendLovableEmail } = await import("@lovable.dev/email-js");
-      const res = await sendLovableEmail(
-        {
-          to,
-          from,
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "onboarding@resend.dev",
+          to: [to],
           subject: `New interest form submission — ${data.name}`,
           html,
           text,
-          purpose: "interest_submission",
-        },
-        { apiKey },
-      );
-      return { sent: res.success, reason: null };
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error("[interest] Resend error:", responseData);
+
+        return {
+          sent: false,
+          reason: "send_failed" as const,
+        };
+      }
+
+      console.log("[interest] Resend success:", responseData);
+
+      return {
+        sent: true,
+        reason: null,
+      };
     } catch (err) {
-      console.error("[interest] email notification failed", err);
-      return { sent: false, reason: "send_failed" as const };
+      console.error("[interest] Email failed:", err);
+
+      return {
+        sent: false,
+        reason: "send_failed" as const,
+      };
     }
   });
