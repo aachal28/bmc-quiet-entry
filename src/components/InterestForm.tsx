@@ -1,10 +1,23 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import emailjs from "@emailjs/browser";
 import { questions } from "@/lib/interest-questions";
 
 type Answers = Record<string, string | string[]>;
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as
+  | string
+  | undefined;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as
+  | string
+  | undefined;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as
+  | string
+  | undefined;
+
+const joinList = (v: string | string[] | undefined) =>
+  Array.isArray(v) ? v.join("; ") : String(v ?? "");
 
 export function InterestForm({ onSubmitted }: { onSubmitted: () => void }) {
   const [step, setStep] = useState(0);
@@ -38,24 +51,99 @@ export function InterestForm({ onSubmitted }: { onSubmitted: () => void }) {
   const submit = async () => {
     setSubmitting(true);
     setError(null);
-    const { error: insertError } = await supabase.from("interest_submissions").insert({
-      name: String(answers["name"] ?? "").trim(),
-      phone: String(answers["phone"] ?? "").trim(),
-      heard_about: String(answers["heard_about"] ?? ""),
-      familiarity: String(answers["familiarity"] ?? ""),
-      six_month_wins: (answers["six_month_wins"] as string[]) ?? [],
-      patience: String(answers["patience"] ?? ""),
-      current_training: (answers["current_training"] as string[]) ?? [],
-      preferred_schedule: String(answers["preferred_schedule"] ?? ""),
-      preferred_time: String(answers["preferred_time"] ?? ""),
-      quarterly_commitment: String(answers["quarterly_commitment"] ?? ""),
-      notes: String(answers["notes"] ?? "").trim() || null,
+
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      setSubmitting(false);
+      setError(
+        "Submissions aren't configured yet. Please try again later.",
+      );
+      return;
+    }
+
+    const name = String(answers["name"] ?? "").trim();
+    const phone = String(answers["phone"] ?? "").trim();
+    const heardAbout = String(answers["heard_about"] ?? "");
+    const familiarity = String(answers["familiarity"] ?? "");
+    const sixMonthWins = joinList(answers["six_month_wins"]);
+    const patience = String(answers["patience"] ?? "");
+    const currentTraining = joinList(answers["current_training"]);
+    const preferredSchedule = String(answers["preferred_schedule"] ?? "");
+    const preferredTime = String(answers["preferred_time"] ?? "");
+    const quarterlyCommitment = String(answers["quarterly_commitment"] ?? "");
+    const notes = String(answers["notes"] ?? "").trim() || "Not provided";
+    const submittedAt = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      dateStyle: "full",
+      timeStyle: "short",
     });
-    setSubmitting(false);
-    if (insertError) {
+
+    const message = [
+      `Bandra Movement Club — New Interest Form Submission`,
+      ``,
+      `Name:`,
+      name,
+      ``,
+      `Phone:`,
+      phone,
+      ``,
+      `Where did you hear about us?`,
+      heardAbout,
+      ``,
+      `How familiar are you with what we do?`,
+      familiarity,
+      ``,
+      `Six months in, what would feel like a real win?`,
+      sixMonthWins,
+      ``,
+      `How patient would you say you are with the process of getting good at something?`,
+      patience,
+      ``,
+      `What does training look like for you right now?`,
+      currentTraining,
+      ``,
+      `Which schedule would work best for you?`,
+      preferredSchedule,
+      ``,
+      `When do you usually prefer to train?`,
+      preferredTime,
+      ``,
+      `Does the quarterly membership structure work for you?`,
+      quarterlyCommitment,
+      ``,
+      `Anything we should know before we reach out?`,
+      notes,
+      ``,
+      `Submitted: ${submittedAt}`,
+    ].join("\n");
+
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          name,
+          phone,
+          heard_about: heardAbout,
+          familiarity,
+          six_month_wins: sixMonthWins,
+          patience,
+          current_training: currentTraining,
+          preferred_schedule: preferredSchedule,
+          preferred_time: preferredTime,
+          quarterly_commitment: quarterlyCommitment,
+          notes,
+          submitted_at: submittedAt,
+          message,
+        },
+        { publicKey: EMAILJS_PUBLIC_KEY },
+      );
+    } catch {
+      setSubmitting(false);
       setError("Something didn't go through. Please try again.");
       return;
     }
+
+    setSubmitting(false);
     onSubmitted();
   };
 
