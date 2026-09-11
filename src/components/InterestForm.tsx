@@ -41,103 +41,96 @@ export function InterestForm({ onSubmitted }: { onSubmitted: () => void }) {
   };
 
   const submit = async () => {
-    setSubmitting(true);
-    setError(null);
-
-    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-      setSubmitting(false);
-      setError(
-        "Submissions aren't configured yet. Please try again later.",
-      );
-      return;
-    }
+    if (submitting) return;
 
     const name = String(answers["name"] ?? "").trim();
     const phone = String(answers["phone"] ?? "").trim();
     const heardAbout = String(answers["heard_about"] ?? "");
     const familiarity = String(answers["familiarity"] ?? "");
-    const sixMonthWins = joinList(answers["six_month_wins"]);
+    const sixMonthWin = asList(answers["six_month_wins"]);
     const patience = String(answers["patience"] ?? "");
-    const currentTraining = joinList(answers["current_training"]);
+    const currentTraining = asList(answers["current_training"]);
     const preferredSchedule = String(answers["preferred_schedule"] ?? "");
-    const preferredTime = String(answers["preferred_time"] ?? "");
-    const quarterlyCommitment = String(answers["quarterly_commitment"] ?? "");
-    const notes = String(answers["notes"] ?? "").trim() || "Not provided";
+    const preferredTrainingTime = String(answers["preferred_time"] ?? "");
+    const membershipFit = String(answers["quarterly_commitment"] ?? "");
+    const anythingElse = String(answers["notes"] ?? "").trim();
+
+    const missingRequired =
+      !name ||
+      !phone ||
+      !heardAbout ||
+      !familiarity ||
+      !patience ||
+      !preferredSchedule ||
+      !preferredTrainingTime ||
+      !membershipFit ||
+      currentTraining.length === 0;
+
+    if (missingRequired) {
+      setError("Some answers are missing. Please go back and complete them.");
+      return;
+    }
+    if (sixMonthWin.length !== 2) {
+      setError("Please go back and pick exactly 2 answers for question 05.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    const { error: insertError } = await supabase
+      .from("interest_submissions")
+      .insert({
+        name,
+        phone,
+        heard_about: heardAbout,
+        familiarity,
+        six_month_win: sixMonthWin,
+        patience,
+        current_training: currentTraining,
+        preferred_schedule: preferredSchedule,
+        preferred_training_time: preferredTrainingTime,
+        membership_fit: membershipFit,
+        anything_else: anythingElse || null,
+      });
+
+    if (insertError) {
+      setSubmitting(false);
+      setError("Something didn't go through. Please try again.");
+      return;
+    }
+
     const submittedAt = new Date().toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       dateStyle: "full",
       timeStyle: "short",
     });
 
-    const message = [
-      `Bandra Movement Club — New Interest Form Submission`,
-      ``,
-      `Name:`,
-      name,
-      ``,
-      `Phone:`,
-      phone,
-      ``,
-      `Where did you hear about us?`,
-      heardAbout,
-      ``,
-      `How familiar are you with what we do?`,
-      familiarity,
-      ``,
-      `Six months in, what would feel like a real win?`,
-      sixMonthWins,
-      ``,
-      `How patient would you say you are with the process of getting good at something?`,
-      patience,
-      ``,
-      `What does training look like for you right now?`,
-      currentTraining,
-      ``,
-      `Which schedule would work best for you?`,
-      preferredSchedule,
-      ``,
-      `When do you usually prefer to train?`,
-      preferredTime,
-      ``,
-      `Does the quarterly membership structure work for you?`,
-      quarterlyCommitment,
-      ``,
-      `Anything we should know before we reach out?`,
-      notes,
-      ``,
-      `Submitted: ${submittedAt}`,
-    ].join("\n");
-
     try {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
+      await notifyInterestSubmission({
+        data: {
           name,
           phone,
           heard_about: heardAbout,
           familiarity,
-          six_month_wins: sixMonthWins,
+          six_month_win: sixMonthWin,
           patience,
           current_training: currentTraining,
           preferred_schedule: preferredSchedule,
-          preferred_time: preferredTime,
-          quarterly_commitment: quarterlyCommitment,
-          notes,
+          preferred_training_time: preferredTrainingTime,
+          membership_fit: membershipFit,
+          anything_else: anythingElse,
           submitted_at: submittedAt,
-          message,
         },
-        { publicKey: EMAILJS_PUBLIC_KEY },
-      );
-    } catch {
-      setSubmitting(false);
-      setError("Something didn't go through. Please try again.");
-      return;
+      });
+    } catch (err) {
+      console.error("[interest] notification failed", err);
     }
 
     setSubmitting(false);
     onSubmitted();
   };
+
 
   const next = () => {
     if (!canProceed) return;
