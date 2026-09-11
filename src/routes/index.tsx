@@ -35,7 +35,7 @@ function Index() {
           <img
   src={logo}
   alt="Bandra Movement Club"
-  className="w-72 max-w-[86vw] mix-blend-multiply sm:w-96"
+  className="w-95 max-w-[100vw] mix-blend-multiply sm:w-96"
   
 />
 
