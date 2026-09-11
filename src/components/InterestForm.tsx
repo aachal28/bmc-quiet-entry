@@ -107,29 +107,33 @@ export function InterestForm({ onSubmitted }: { onSubmitted: () => void }) {
     });
 
     try {
-      await notifyInterestSubmission({
-        data: {
-          name,
-          phone,
-          heard_about: heardAbout,
-          familiarity,
-          six_month_win: sixMonthWin,
-          patience,
-          current_training: currentTraining,
-          preferred_schedule: preferredSchedule,
-          preferred_training_time: preferredTrainingTime,
-          membership_fit: membershipFit,
-          anything_else: anythingElse,
-          submitted_at: submittedAt,
-        },
-      });
-    } catch (err) {
-      console.error("[interest] notification failed", err);
-    }
+  await notifyInterestSubmission({
+    data: {
+      name,
+      phone,
+      heard_about: heardAbout,
+      familiarity,
+      six_month_win: sixMonthWin,
+      patience,
+      current_training: currentTraining,
+      preferred_schedule: preferredSchedule,
+      preferred_training_time: preferredTrainingTime,
+      membership_fit: membershipFit,
+      anything_else: anythingElse,
+      submitted_at: submittedAt,
+    },
+  });
+} catch (err) {
+  console.error("[interest] notification failed", err);
+  setSubmitting(false);
+  setError("Your details were saved, but the email notification could not be sent. Please try again.");
+  return;
+}
+
 
     setSubmitting(false);
     onSubmitted();
-  };
+};
 
 
   const next = () => {
