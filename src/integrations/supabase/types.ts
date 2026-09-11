@@ -16,49 +16,49 @@ export type Database = {
     Tables: {
       interest_submissions: {
         Row: {
+          anything_else: string | null
           created_at: string
           current_training: string[]
           familiarity: string
           heard_about: string
           id: string
+          membership_fit: string
           name: string
-          notes: string | null
           patience: string
           phone: string
           preferred_schedule: string
-          preferred_time: string
-          quarterly_commitment: string
-          six_month_wins: string[]
+          preferred_training_time: string
+          six_month_win: string[]
         }
         Insert: {
+          anything_else?: string | null
           created_at?: string
           current_training?: string[]
           familiarity: string
           heard_about: string
           id?: string
+          membership_fit: string
           name: string
-          notes?: string | null
           patience: string
           phone: string
           preferred_schedule: string
-          preferred_time: string
-          quarterly_commitment: string
-          six_month_wins?: string[]
+          preferred_training_time: string
+          six_month_win?: string[]
         }
         Update: {
+          anything_else?: string | null
           created_at?: string
           current_training?: string[]
           familiarity?: string
           heard_about?: string
           id?: string
+          membership_fit?: string
           name?: string
-          notes?: string | null
           patience?: string
           phone?: string
           preferred_schedule?: string
-          preferred_time?: string
-          quarterly_commitment?: string
-          six_month_wins?: string[]
+          preferred_training_time?: string
+          six_month_win?: string[]
         }
         Relationships: []
       }
