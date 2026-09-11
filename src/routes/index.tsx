@@ -33,9 +33,15 @@ function Index() {
       {stage === "landing" ? (
         <section className="quiet-in flex min-h-dvh flex-col items-center justify-center px-8">
           <img
-  src={logo.url}
+  src={logo}
   alt="Bandra Movement Club"
-
+  className="w-72 max-w-[86vw] mix-blend-multiply sm:w-96"
+  style={{
+    maskImage:
+      "radial-gradient(closest-side, oklch(0 0 0) 74%, transparent 99%)",
+    WebkitMaskImage:
+      "radial-gradient(closest-side, oklch(0 0 0) 74%, transparent 99%)",
+  }}
 />
 
 
